@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dazura Expert Agent v14.0 - Full Lifecycle</title>
+    <style>
+        :root { --primary: #1a2a3a; --accent: #3498db; --success: #27ae60; --warning: #f39c12; --danger: #e74c3c; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--primary); }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+        
+        /* Header */
+        header { border-bottom: 2px solid #edf2f7; margin-bottom: 25px; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .version-badge { background: #ebf8ff; color: #2b6cb0; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; border: 1px solid #bee3f8; }
+
+        /* Navigation */
+        .tabs { display: flex; gap: 8px; margin-bottom: 25px; }
+        .tab { padding: 12px 24px; cursor: pointer; border-radius: 10px; font-weight: 600; background: #edf2f7; color: #4a5568; transition: 0.2s; border: none; }
+        .tab.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
+        
+        .section { display: none; animation: slideIn 0.3s ease-out; }
+        .section.active { display: block; }
+        @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Forms & Inputs */
+        .card { background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        textarea, input { width: 100%; padding: 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 15px; box-sizing: border-box; margin-bottom: 15px; transition: border 0.2s; }
+        textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+        textarea.prompt-box { height: 400px; font-family: 'Fira Code', 'Courier New', monospace; background: #fdfdfd; font-size: 14px; }
+        
+        /* Buttons */
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+        button { padding: 12px 28px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px; transition: 0.2s; font-size: 15px; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-save { background: var(--success); color: white; }
+        .btn-print { background: #718096; color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+
+        /* Output & Print Management */
+        #output { background: #fdfdfd; padding: 30px; border: 1px solid #e2e8f0; border-right: 6px solid var(--accent); border-radius: 12px; white-space: pre-wrap; line-height: 1.8; font-size: 16px; margin-top: 20px; }
+        
+        .loader { display: none; border: 3px solid #f3f3f3; border-top: 3px solid var(--accent); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Print Logic - This hides everything EXCEPT the output */
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: none; padding: 0; }
+            header, .tabs, .btn-group, .admin-only, textarea, input, .instruction-text, .card { display: none !important; }
+            #output { border: none; padding: 0; margin: 0; }
+            #output h2, #output h3 { color: black; border-bottom: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1 style="margin:0; font-size: 1.8em;">🛠️ Dazura Wiring Expert</h1>
+            <p class="instruction-text" style="color:#718096; margin:5px 0 0 0;">מערכת מומחה לניהול הנדסה, רכש וייצור</p>
+        </div>
+        <span class="version-badge">v14.0 Production</span>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showSection('user-section', this)">ניתוח פרויקט / BOM</div>
+        <div class="tab" onclick="showSection('inventory-section', this)">מלאי מחסן</div>
+        <div class="tab" onclick="showSection('admin-section', this)">ניהול יכולות (Admin)</div>
+    </div>
+
+    <div id="user-section" class="section active">
+        <div class="card">
+            <label style="font-weight:bold; display:block; margin-bottom:8px;">הזן מק"ט בודד או רשימה (BOM):</label>
+            <textarea id="inputParts" style="height: 150px;" placeholder="למשל:&#10;DTM04-4P&#10;0460-202-20141"></textarea>
+            <div class="btn-group">
+                <button class="btn-main" onclick="runAnalysis()">
+                    <div id="loader" class="loader"></div> הרץ ניתוח מקיף
+                </button>
+                <button class="btn-print" onclick="window.print()">📄 הפק דוח PDF ללקוח/ייצור</button>
+            </div>
+        </div>
+        <div id="output">המתן להזנת נתונים...</div>
+    </div>
+
+    <div id="inventory-section" class="section">
+        <div class="card">
+            <h3>📦 ניהול מלאי פנימי (מחסן כספת)</h3>
+            <p style="font-size:0.9em; color:#4a5568;">הדבק כאן את רשימת המלאי שלך (מק"ט, כמות, מיקום). הסוכן ייתן עדיפות לרכיבים אלו בניתוח.</p>
+            <textarea id="inventoryData" style="height: 300px;" placeholder="Part Number, Qty, Location&#10;DTM04-4P, 150, A1-B3&#10;0460-202-20141, 500, B2-C1"></textarea>
+            <button class="btn-save" onclick="saveInventory()">💾 שמור מלאי במערכת</button>
+        </div>
+    </div>
+
+    <div id="admin-section" class="section">
+        <div class="card admin-only">
+            <h3>🧠 "המוח" של הסוכן (System Instructions)</h3>
+            <p style="font-size:0.9em; color:#4a5568;">כאן אתה מגדיר את כללי הניתוח, התמחור והוראות העבודה. שדרג כאן את היכולות בעתיד.</p>
+            <textarea id="systemPromptInput" class="prompt-box"></textarea>
+            
+            <div style="margin-top:20px;">
+                <label style="font-weight:bold;">Gemini API Key:</label>
+                <input type="password" id="apiKeyInput" placeholder="הדבק כאן את המפתח שלך">
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-save" onclick="saveSettings()">💾 שמור שדרוג יכולות</button>
+                <button class="btn-print" style="background:#4a5568" onclick="exportConfig()">📤 ייצוא גיבוי מערכת</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // הריכוז המלא של כל היכולות שפיתחנו לאורך השיחה
+    const MASTER_PROMPT = `אתה מומחה בכיר להנדסת חיווט, ייצור ואופטימיזציה. נתח את המק"טים שיתקבלו לפי הפרוטוקול הבא:
+
+1. זיהוי והתאמה: יצרן, AWG, ומגבלת קוטר בידוד (Max Insulation OD). בצע השוואה פיזית: האם חוט PVC, סיליקון או טפלון יתאימו לקונקטור? 
+2. מלאי פנימי: בדוק אם המק"ט מופיע ברשימת המלאי שסופקה. ציין מיקום (Shelf/Drawer) או המלץ על חלופה מהמלאי כדי לחסוך רכש.
+3. דוח לקוח (Client View): צור טבלה ויזואלית עם [attachment_0](attachment), תיאור יתרונות טכניים וסה"כ עלות חומר גלם (ללא פירוט מחיר לכל שורה).
+4. הוראות עבודה (Work Instructions): פירוט שלבי חשיפה (Strip length), כלי לחיצה (Crimper) והגדרות כלי, וסדר הכנסה ל-Housing.
+5. פתרון תקלות (Troubleshooting): רשימת בדיקה ל-QA (למה הפין לא ננעל? למה הלחיצה נכשלה?).
+6. רכש חיצוני: קישורים לחיפוש ב-Mouser, DigiKey ו-Farnell במידה ואין מלאי פנימי.
+7. תמחור: הערך עלות ליחידה בכמויות 1, 100, 1000.`;
+
+    window.onload = () => {
+        document.getElementById('systemPromptInput').value = localStorage.getItem('dazura_prompt') || MASTER_PROMPT;
+        document.getElementById('apiKeyInput').value = localStorage.getItem('dazura_api_key') || "";
+        document.getElementById('inventoryData').value = localStorage.getItem('dazura_inventory') || "";
+    };
+
+    function showSection(id, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+    }
+
+    function saveSettings() {
+        localStorage.setItem('dazura_prompt', document.getElementById('systemPromptInput').value);
+        localStorage.setItem('dazura_api_key', document.getElementById('apiKeyInput').value);
+        alert("המוח של הסוכן שודרג בהצלחה!");
+    }
+
+    function saveInventory() {
+        localStorage.setItem('dazura_inventory', document.getElementById('inventoryData').value);
+        alert("נתוני המלאי עודכנו!");
+    }
+
+    async function runAnalysis() {
+        const parts = document.getElementById('inputParts').value;
+        const prompt = localStorage.getItem('dazura_prompt');
+        const inventory = localStorage.getItem('dazura_inventory');
+        const apiKey = localStorage.getItem('dazura_api_key');
+        
+        if (!apiKey) return alert("אנא הזן מפתח API בלשונית Admin");
+        if (!parts) return alert("אנא הזן מק\"טים לניתוח");
+        
+        const loader = document.getElementById('loader');
+        const output = document.getElementById('output');
+        loader.style.display = "inline-block";
+        output.innerText = "הסוכן מעבד נתונים הנדסיים, בודק מלאים ומייצר הוראות עבודה...";
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `${prompt}\n\nנתוני מלאי פנימי:\n${inventory}\n\nהמק"טים לניתוח:\n${parts}` }] }]
+                })
+            });
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0].content) {
+                let resultText = data.candidates[0].content.parts[0].text;
+                // המרת תגיות תמונה לתצוגה ויזואלית בסיסית (אופציונלי)
+                resultText = resultText.replace(/\/g, '<div style="background:#eee; padding:10px; margin:10px 0; border-radius:5px; font-size:0.8em; color:#666; border:1px dashed #ccc;">🖼️ איור טכני: $1</div>');
+                output.innerHTML = resultText;
+            } else {
+                output.innerText = "שגיאה בניתוח הנתונים. וודא שהמפתח תקין.";
+            }
+        } catch (e) {
+            output.innerText = "שגיאה בחיבור לשרת Gemini.";
+            console.error(e);
+        } finally {
+            loader.style.display = "none";
+        }
+    }
+
+    function exportConfig() {
+        const config = { 
+            prompt: localStorage.getItem('dazura_prompt'), 
+            inventory: localStorage.getItem('dazura_inventory'),
+            export_date: new Date().toLocaleDateString()
+        };
+        const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Dazura_Backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+</script>
+
+</body>
+</html>
