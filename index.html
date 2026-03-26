@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dazura Expert v14.6</title>
+    <title>Dazura Expert v14.7</title>
     <style>
         :root { --primary: #1a2a3a; --accent: #3498db; --success: #27ae60; --bg: #f8fafc; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--primary); }
@@ -19,7 +19,7 @@
         #output { background: #fdfdfd; padding: 20px; border: 1px solid #e2e8f0; border-right: 6px solid var(--accent); border-radius: 10px; white-space: pre-wrap; margin-top: 20px; line-height: 1.7; }
         .loader { display: none; border: 3px solid #f3f3f3; border-top: 3px solid var(--accent); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .error-card { color: #c53030; background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 10px; margin-top: 20px; }
+        .error-card { color: #c53030; background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 10px; margin-top: 20px; direction: ltr; text-align: left; }
     </style>
 </head>
 <body>
@@ -27,7 +27,7 @@
 <div class="container">
     <header>
         <h2 style="margin:0;">🛠️ Dazura Expert</h2>
-        <span style="font-size: 0.7em; background: #eee; padding: 4px 10px; border-radius: 10px;">v14.6 Stable</span>
+        <span style="font-size: 0.7em; background: #eee; padding: 4px 10px; border-radius: 10px;">v14.7 (Pro)</span>
     </header>
 
     <div class="tabs">
@@ -37,7 +37,7 @@
     </div>
 
     <div id="user-section" class="section active">
-        <textarea id="inputParts" style="height: 140px;" placeholder="הכנס מק&quot;טים (למשל: DTM04-4P)..."></textarea>
+        <textarea id="inputParts" style="height: 140px;" placeholder="הכנס מק&quot;טים (למשל: Dtm04-4p)..."></textarea>
         <button onclick="runAnalysis()">
             <div id="loader" class="loader"></div> נתח BOM
         </button>
@@ -50,24 +50,32 @@
     </div>
 
     <div id="admin-section" class="section">
-        <input type="password" id="apiKeyInput" placeholder="הדבק API Key">
-        <textarea id="systemPromptInput" style="height: 200px; display:none;"></textarea>
+        <input type="password" id="apiKeyInput" placeholder="הדבק API Key כאן">
         <button style="background:var(--success)" onclick="saveAdmin()">שמור הגדרות</button>
     </div>
 </div>
 
 <script>
-    const DEFAULT_PROMPT = `אתה מומחה הנדסת חיווט. נתח מק"טים: יצרן, AWG, קוטר בידוד, כלי לחיצה, והוראות ייצור.`;
+    const MASTER_PROMPT = `אתה מומחה הנדסת חיווט. נתח מק"טים: יצרן, AWG, קוטר בידוד, כלי לחיצה, והוראות ייצור.`;
 
     window.onload = () => {
-        document.getElementById('systemPromptInput').value = localStorage.getItem('dazura_prompt') || DEFAULT_PROMPT;
         document.getElementById('apiKeyInput').value = localStorage.getItem('dazura_api_key') || "";
         document.getElementById('inventoryData').value = localStorage.getItem('dazura_inventory') || "";
     };
 
     function showSection(id, el) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.forEach(t2 => t2.classList.remove('active'))); // Fix for multiple tabs
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+    }
+    
+    // תיקון קטן לפונקציית הטאבים
+    function showSection(id, el) {
+        const sections = document.getElementsByClassName('section');
+        for (let s of sections) s.classList.remove('active');
+        const tabs = document.getElementsByClassName('tab');
+        for (let t of tabs) t.classList.remove('active');
         document.getElementById(id).classList.add('active');
         el.classList.add('active');
     }
@@ -78,7 +86,6 @@
     }
 
     function saveAdmin() {
-        localStorage.setItem('dazura_prompt', document.getElementById('systemPromptInput').value);
         localStorage.setItem('dazura_api_key', document.getElementById('apiKeyInput').value);
         alert("הגדרות נשמרו!");
     }
@@ -92,17 +99,17 @@
         if (!apiKey) return alert("חסר API Key!");
         
         loader.style.display = "inline-block";
-        output.innerText = "מנתח...";
+        output.innerText = "מנתח נתונים הנדסיים...";
 
-        // נסיון עם הכתובת המדויקת שגוגל דורשת כרגע
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // שימוש במודל gemini-pro בגרסה v1 - הכי יציב שיש
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: `${DEFAULT_PROMPT}\n\nמק"טים:\n${parts}` }] }]
+                    contents: [{ parts: [{ text: `${MASTER_PROMPT}\n\nמק"טים לניתוח:\n${parts}` }] }]
                 })
             });
 
@@ -111,10 +118,12 @@
             if (data.candidates && data.candidates[0].content) {
                 output.innerText = data.candidates[0].content.parts[0].text;
             } else if (data.error) {
-                output.innerHTML = `<div class='error-card'>שגיאת גוגל: ${data.error.message}</div>`;
+                output.innerHTML = `<div class='error-card'>שגיאת גוגל: ${data.error.message}<br>קוד: ${data.error.code}</div>`;
+            } else {
+                output.innerHTML = "<div class='error-card'>לא התקבלה תשובה. וודא שהמפתח תקין.</div>";
             }
         } catch (e) {
-            output.innerHTML = `<div class='error-card'>שגיאה: ${e.message}</div>`;
+            output.innerHTML = `<div class='error-card'>שגיאת תקשורת: ${e.message}</div>`;
         } finally {
             loader.style.display = "none";
         }
