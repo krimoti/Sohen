@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מנתח מק"טים טכני – AI Connector Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Heebo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pri:#1a56db; --pri2:#1e429f; --pri-l:#ebf0fb; --pri-xl:#f5f8ff;
+  --acc:#0ea5e9; --acc2:#2563eb;
+  --bg:#f1f5f9; --bg2:#fff; --bg3:#e8eef5; --bg4:#dde6f0;
+  --text:#0f172a; --text2:#334155; --text3:#64748b; --text4:#94a3b8;
+  --border:#cbd5e1; --border2:#e2e8f0;
+  --warn:#d97706; --warn-bg:#fffbeb; --warn-b:#fef3c7;
+  --danger:#dc2626; --danger-bg:#fef2f2;
+  --ok:#059669; --ok-bg:#ecfdf5;
+  --info:#0369a1; --info-bg:#f0f9ff;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow2:0 4px 16px rgba(0,0,0,.1);
+  --r:8px; --mono:'IBM Plex Mono',monospace; --main:'Heebo',sans-serif;
+  --fs:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--main);font-size:var(--fs);min-height:100vh;}
+
+/* ═══ HEADER ═══ */
+.hdr{position:sticky;top:0;z-index:200;height:56px;padding:0 20px;
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,var(--pri2),var(--pri));
+  box-shadow:var(--shadow2);}
+.hdr-logo{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-weight:600;font-size:11px;color:#fff;border:1px solid rgba(255,255,255,.25);flex-shrink:0;}
+.hdr h1{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;}
+.hdr p{font-size:9px;color:rgba(255,255,255,.6);font-family:var(--mono);}
+.hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hbadge{font-family:var(--mono);font-size:9px;padding:2px 9px;border-radius:20px;
+  background:rgba(255,255,255,.14);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);}
+.hbadge.live{background:rgba(5,150,105,.25);border-color:rgba(5,150,105,.45);color:#6ee7b7;}
+.fc{display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:2px 8px;}
+.fc-lbl{font-size:9px;color:rgba(255,255,255,.65);font-family:var(--mono);margin-left:3px;}
+.fc-btn{width:20px;height:20px;background:rgba(255,255,255,.15);border:none;border-radius:50%;
+  color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+  font-weight:700;line-height:1;transition:background .15s;}
+.fc-btn:hover{background:rgba(255,255,255,.28);}
+.fc-val{font-family:var(--mono);font-size:10px;color:#fff;min-width:28px;text-align:center;}
+
+/* ═══ LAYOUT ═══ */
+.layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{border-left:1px solid var(--border);background:var(--bg2);overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.ss{border-bottom:1px solid var(--border2);padding:14px 16px;}
+.slbl{display:block;font-size:9.5px;font-weight:700;color:var(--text4);text-transform:uppercase;
+  letter-spacing:1.1px;margin-bottom:9px;font-family:var(--mono);}
+
+/* Provider */
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:9px;}
+.pbtn{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:8px 4px;cursor:pointer;text-align:center;transition:all .15s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;}
+.pbtn:hover{border-color:var(--acc);background:var(--pri-l);}
+.pbtn.on{border-color:var(--pri);background:var(--pri-l);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.p-ico{font-size:15px;}
+.p-nm{font-family:var(--mono);font-size:8.5px;color:var(--text3);font-weight:600;}
+.pbtn.on .p-nm{color:var(--pri);}
+
+/* Inputs */
+select,.inp,.pn-inp,.bulk-inp,.wi-inp{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-size:var(--fs);padding:8px 10px;outline:none;transition:all .15s;}
+select{appearance:none;-webkit-appearance:none;cursor:pointer;font-family:var(--mono);font-size:11px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%2394a3b8'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 9px center;}
+select:focus,.inp:focus,.pn-inp:focus,.bulk-inp:focus,.wi-inp:focus{
+  border-color:var(--pri);box-shadow:0 0 0 3px rgba(26,86,219,.1);background:#fff;}
+.inp,.bulk-inp{font-family:var(--mono);font-size:11px;direction:ltr;}
+.inp{padding:8px 32px 8px 10px;}
+.inp::placeholder,.pn-inp::placeholder,.bulk-inp::placeholder,.wi-inp::placeholder{color:var(--text4);}
+.pn-inp{font-family:var(--mono);font-size:13px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:7px;}
+.pn-inp::placeholder{font-size:11px;letter-spacing:0;text-transform:none;font-weight:400;}
+.bulk-inp{resize:vertical;min-height:65px;direction:ltr;}
+.wi-inp{font-family:var(--main);font-size:12px;}
+.key-wrap{position:relative;}
+.eye{position:absolute;left:9px;top:50%;transform:translateY(-50%);background:none;
+  border:none;color:var(--text4);cursor:pointer;font-size:12px;padding:0;}
+.eye:hover{color:var(--text3);}
+.api-st{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;
+  font-family:var(--mono);color:var(--text4);}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.dot.g{background:var(--ok);box-shadow:0 0 4px rgba(5,150,105,.5);}
+.dot.y{background:var(--warn);animation:pls 1.5s infinite;}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.3}}
+.mt-tgl{display:flex;gap:5px;margin-bottom:8px;}
+.mt-btn{flex:1;padding:5px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--r);
+  color:var(--text4);font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .15s;text-align:center;}
+.mt-btn.on{background:var(--pri-l);border-color:var(--pri);color:var(--pri);font-weight:700;}
+
+/* Buttons */
+.btn-p{width:100%;padding:11px;background:linear-gradient(135deg,var(--pri),var(--acc2));
+  border:none;border-radius:var(--r);color:#fff;font-family:var(--main);font-size:var(--fs);
+  font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;
+  justify-content:center;gap:7px;box-shadow:0 2px 8px rgba(26,86,219,.22);}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,86,219,.32);}
+.btn-p:active{transform:none;}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-s{width:100%;padding:8px;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:var(--r);color:var(--pri);font-family:var(--main);font-size:12px;
+  font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;
+  justify-content:center;gap:5px;margin-top:7px;}
+.btn-s:hover{background:var(--pri-l);border-color:var(--pri);}
+
+/* Export grid */
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.exp-btn{padding:7px 5px;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:6px;color:var(--text3);font-family:var(--mono);font-size:9.5px;cursor:pointer;
+  transition:all .15s;text-align:center;display:flex;align-items:center;justify-content:center;gap:3px;}
+.exp-btn:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l);}
+.exp-btn.priority{border-color:#e55a2b;color:#e55a2b;background:#fff5f0;}
+.exp-btn.priority:hover{background:#fee8dc;}
+.exp-btn.excel{border-color:#217346;color:#217346;background:#f0faf4;}
+.exp-btn.excel:hover{background:#dcf5e5;}
+
+/* WI form */
+.wi-fg{margin-bottom:9px;}
+.wi-lbl{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;}
+
+/* History */
+.h-item{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;
+  background:var(--bg3);border-radius:6px;margin-bottom:4px;cursor:pointer;
+  border:1.5px solid transparent;transition:all .15s;}
+.h-item:hover{border-color:var(--border);background:var(--bg4);}
+.h-item.on{border-color:var(--pri);background:var(--pri-l);}
+.h-pn{font-family:var(--mono);font-size:11px;color:var(--text);font-weight:600;}
+.h-meta{font-family:var(--mono);font-size:8.5px;color:var(--text4);}
+
+/* ═══ CONTENT ═══ */
+.content{overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;}
+.content::-webkit-scrollbar{width:3px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* Empty */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:12px;padding:40px;text-align:center;}
+.e-ico{font-size:48px;}
+.e-ttl{font-size:18px;font-weight:800;color:var(--text3);}
+.e-sub{font-size:12px;color:var(--text4);max-width:300px;line-height:1.8;}
+.e-chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:4px;}
+.e-chip{font-family:var(--mono);font-size:10px;padding:4px 11px;background:var(--bg2);
+  border:1.5px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;transition:all .15s;}
+.e-chip:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l);}
+
+/* ═══ RESULT AREA ═══ */
+.result-wrap{padding:0;animation:fi .3s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Result header bar */
+.result-hdr{padding:16px 24px 0;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;}
+.result-pn{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--pri);letter-spacing:1px;}
+.result-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.result-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:4px;
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text4);}
+.result-badge.ok{background:var(--ok-bg);border-color:#6ee7b7;color:var(--ok);}
+.result-badge.warn{background:var(--warn-bg);border-color:#fcd34d;color:var(--warn);}
+.result-badge.danger{background:var(--danger-bg);border-color:#fca5a5;color:var(--danger);}
+.result-actions{display:flex;gap:6px;flex-shrink:0;}
+.r-btn{padding:6px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:6px;
+  color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;display:flex;
+  align-items:center;gap:4px;font-family:var(--mono);}
+.r-btn:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l);}
+
+/* Result tabs */
+.rtabs{display:flex;border-bottom:2px solid var(--border2);margin:12px 0 0;padding:0 24px;gap:0;overflow-x:auto;}
+.rtab{padding:9px 14px;background:none;border:none;border-bottom:2.5px solid transparent;
+  margin-bottom:-2px;color:var(--text4);font-family:var(--main);font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+.rtab:hover{color:var(--text2);}
+.rtab.on{color:var(--pri);border-bottom-color:var(--pri);}
+.rtab .cnt{font-size:9px;background:var(--bg3);border-radius:10px;padding:1px 6px;
+  color:var(--text4);font-family:var(--mono);}
+.rtab.on .cnt{background:var(--pri);color:#fff;}
+
+/* Tab panels */
+.tpanel{display:none;padding:20px 24px 32px;}
+.tpanel.on{display:block;}
+
+/* ═══ TABLE SYSTEM ═══ */
+.section-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+  margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow);}
+.sc-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;background:var(--bg3);border-bottom:1px solid var(--border2);}
+.sc-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;}
+.sc-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;}
+.sc-copy{padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;
+  font-size:10px;color:var(--text3);cursor:pointer;font-family:var(--mono);transition:all .15s;}
+.sc-copy:hover{border-color:var(--pri);color:var(--pri);}
+
+/* Data tables */
+.dtbl{width:100%;border-collapse:collapse;font-size:calc(var(--fs) - 1px);}
+.dtbl th{background:var(--pri2);color:#fff;padding:8px 14px;text-align:right;
+  font-size:10.5px;font-weight:700;letter-spacing:.3px;border:none;white-space:nowrap;}
+.dtbl td{border-bottom:1px solid var(--border2);padding:8px 14px;text-align:right;
+  color:var(--text);vertical-align:middle;}
+.dtbl tr:last-child td{border-bottom:none;}
+.dtbl tr:hover td{background:var(--pri-xl);}
+.dtbl td.mono{font-family:var(--mono);font-size:12px;color:var(--pri2);font-weight:600;}
+.dtbl td.price{font-family:var(--mono);font-size:12px;color:var(--ok);font-weight:600;}
+.dtbl td.total{font-family:var(--mono);font-size:12px;color:var(--pri);font-weight:700;background:var(--pri-xl);}
+.dtbl td.warn-cell{color:var(--warn);font-weight:600;}
+.dtbl td.ok-cell{color:var(--ok);font-weight:600;}
+.dtbl td.danger-cell{color:var(--danger);font-weight:600;}
+.dtbl tr.subtotal td{background:var(--bg3);font-weight:700;border-top:2px solid var(--border);}
+.dtbl tr.header-row td{background:var(--pri-l);font-weight:700;color:var(--pri2);font-size:11px;}
+
+/* Alert cards */
+.alert-card{border-radius:var(--r);padding:12px 15px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;}
+.alert-card.warn{background:var(--warn-bg);border:1px solid #fcd34d;border-right:4px solid var(--warn);}
+.alert-card.danger{background:var(--danger-bg);border:1px solid #fca5a5;border-right:4px solid var(--danger);}
+.alert-card.ok{background:var(--ok-bg);border:1px solid #6ee7b7;border-right:4px solid var(--ok);}
+.alert-card.info{background:var(--info-bg);border:1px solid #bae6fd;border-right:4px solid var(--acc);}
+.ac-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.ac-title{font-weight:700;font-size:13px;margin-bottom:3px;}
+.ac-warn .ac-title{color:#92400e;}
+.ac-danger .ac-title{color:#991b1b;}
+.ac-ok .ac-title{color:#065f46;}
+.ac-info .ac-title{color:var(--info);}
+.ac-body{font-size:12px;line-height:1.7;color:var(--text2);}
+.ac-body.mono{font-family:var(--mono);}
+
+/* WI Steps */
+.wi-step{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+  margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.wi-step-hdr{display:flex;align-items:center;gap:10px;padding:11px 16px;
+  background:var(--bg3);border-bottom:1px solid var(--border2);}
+.wi-num{width:26px;height:26px;border-radius:50%;background:var(--pri);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;}
+.wi-step-title{font-weight:700;font-size:13px;color:var(--text);}
+.wi-step-body{padding:12px 16px;font-size:calc(var(--fs) - 1px);line-height:1.8;color:var(--text2);}
+.wi-step-body ul{padding-right:18px;}
+.wi-step-body li{margin-bottom:4px;}
+.wi-step-body .param{font-family:var(--mono);font-size:11px;color:var(--pri2);font-weight:600;
+  background:var(--pri-l);padding:1px 5px;border-radius:3px;}
+
+/* QC Checklist */
+.qc-item{display:flex;align-items:center;gap:10px;padding:9px 16px;
+  border-bottom:1px solid var(--border2);cursor:pointer;transition:background .15s;}
+.qc-item:last-child{border-bottom:none;}
+.qc-item:hover{background:var(--pri-xl);}
+.qc-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.qc-item.checked .qc-check{background:var(--ok);border-color:var(--ok);color:#fff;}
+.qc-label{font-size:13px;color:var(--text);}
+.qc-item.checked .qc-label{text-decoration:line-through;color:var(--text4);}
+.qc-badge{margin-right:auto;font-family:var(--mono);font-size:9px;padding:2px 7px;
+  border-radius:3px;border:1px solid var(--border);}
+.qc-badge.critical{background:var(--danger-bg);border-color:#fca5a5;color:var(--danger);}
+.qc-badge.high{background:var(--warn-bg);border-color:#fcd34d;color:var(--warn);}
+.qc-badge.std{background:var(--bg3);color:var(--text4);}
+.qc-progress{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin:8px 0;}
+.qc-bar{height:100%;background:linear-gradient(90deg,var(--ok),#34d399);border-radius:2px;transition:width .4s;}
+.qc-stat{display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--text4);margin-bottom:4px;}
+
+/* Loading */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:16px;padding:40px;}
+.l-pn{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--pri);letter-spacing:2px;}
+.l-bar{width:260px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.l-fill{height:100%;background:linear-gradient(90deg,var(--pri),var(--acc));animation:lb 2s ease-in-out infinite;}
+@keyframes lb{0%{width:0}50%{width:100%}100%{width:0}}
+.l-steps{display:flex;flex-direction:column;gap:7px;width:260px;}
+.lstep{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--text4);transition:color .3s;}
+.lstep.on{color:var(--pri);font-weight:600;}
+.lstep.done{color:var(--ok);}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s;}
+.lstep.on .ldot{background:var(--pri);box-shadow:0 0 6px rgba(26,86,219,.4);animation:pls 1s infinite;}
+.lstep.done .ldot{background:var(--ok);}
+
+/* Error */
+.err-box{background:var(--danger-bg);border:1px solid #fca5a5;border-radius:var(--r);
+  padding:18px;margin:24px;display:flex;gap:12px;}
+.err-ico{font-size:22px;flex-shrink:0;}
+.err-t{font-weight:700;color:var(--danger);margin-bottom:4px;}
+.err-m{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.7;}
+
+/* Priority export box */
+.priority-preview{background:#fff5f0;border:1px solid #fdc7a8;border-radius:var(--r);
+  padding:14px;margin-top:10px;}
+.priority-preview pre{font-family:var(--mono);font-size:10px;color:#7c2d12;
+  overflow-x:auto;line-height:1.6;white-space:pre-wrap;}
+
+@media print{
+  .sidebar,.hdr,.rtabs,.result-actions{display:none!important;}
+  .layout{display:block;}
+  .content{overflow:visible;height:auto;}
+  .tpanel{display:block!important;}
+  .result-wrap{padding:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">CX</div>
+  <div>
+    <h1>מנתח מק"טים טכני</h1>
+    <p>AI Connector Analyzer // Priority · Excel · JSON Ready</p>
+  </div>
+  <div class="hdr-r">
+    <div class="fc">
+      <span class="fc-lbl">Aa</span>
+      <button class="fc-btn" onclick="chgFs(-1)">−</button>
+      <span class="fc-val" id="fc-val">14</span>
+      <button class="fc-btn" onclick="chgFs(1)">+</button>
+    </div>
+    <span class="hbadge live">● LIVE</span>
+    <span class="hbadge">Priority · Excel · JSON</span>
+  </div>
+</div>
+
+<div class="layout">
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+
+  <!-- Tabs -->
+  <div class="ss" style="padding-bottom:0">
+    <div style="display:flex;border-bottom:2px solid var(--border2);margin-bottom:0">
+      <button style="flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid var(--pri);margin-bottom:-2px;color:var(--pri);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer" id="stab-a" onclick="sstab('a')">🔍 ניתוח</button>
+      <button style="flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid transparent;margin-bottom:-2px;color:var(--text4);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer" id="stab-w" onclick="sstab('w')">📋 הוראות</button>
+    </div>
+  </div>
+
+  <!-- ANALYZE PANEL -->
+  <div id="sp-a">
+    <div class="ss">
+      <span class="slbl">🤖 ספק AI</span>
+      <div class="pg">
+        <button class="pbtn on" onclick="selProv('claude')" id="pb-claude"><span class="p-ico">🔮</span><span class="p-nm">Claude</span></button>
+        <button class="pbtn" onclick="selProv('openai')" id="pb-openai"><span class="p-ico">⚡</span><span class="p-nm">OpenAI</span></button>
+        <button class="pbtn" onclick="selProv('gemini')" id="pb-gemini"><span class="p-ico">💫</span><span class="p-nm">Gemini</span></button>
+      </div>
+      <span class="slbl" style="margin-top:8px">מודל</span>
+      <select id="mdl-sel"></select>
+    </div>
+
+    <div class="ss">
+      <span class="slbl">🔑 API Key</span>
+      <div class="key-wrap">
+        <input type="password" class="inp" id="api-k" placeholder="הכנס מפתח..." oninput="chkKey()" autocomplete="off">
+        <button class="eye" onclick="toggleEye()">👁</button>
+      </div>
+      <div class="api-st"><span class="dot" id="kdot"></span><span id="ktxt">המתן להזנת מפתח</span></div>
+    </div>
+
+    <div class="ss">
+      <span class="slbl">🔌 מק"ט</span>
+      <div class="mt-tgl">
+        <button class="mt-btn on" onclick="setMode('s')" id="mb-s">יחיד</button>
+        <button class="mt-btn" onclick="setMode('b')" id="mb-b">Bulk</button>
+      </div>
+      <div id="in-s"><input type="text" class="pn-inp" id="pn-inp" placeholder="DTM04-4P" onkeydown="if(event.key==='Enter')run()"></div>
+      <div id="in-b" style="display:none"><textarea class="bulk-inp" id="pn-bulk" placeholder="מק&quot;ט אחד בכל שורה:&#10;DTM04-4P&#10;DTM06-4S"></textarea></div>
+    </div>
+
+    <div class="ss">
+      <button class="btn-p" onclick="run()" id="run-btn"><span id="run-ico">⚡</span><span id="run-txt">נתח מק"ט</span></button>
+    </div>
+
+    <div class="ss">
+      <span class="slbl">📤 ייצוא</span>
+      <div class="exp-grid">
+        <button class="exp-btn priority" onclick="expPriority()">🔶 Priority</button>
+        <button class="exp-btn excel" onclick="expExcel()">📗 Excel CSV</button>
+        <button class="exp-btn" onclick="expJSON()">📄 JSON מלא</button>
+        <button class="exp-btn" onclick="expMD()">📝 Markdown</button>
+        <button class="exp-btn" onclick="cpRaw()" style="grid-column:span 2">📋 העתק טקסט</button>
+      </div>
+    </div>
+
+    <div class="ss" id="hist-sec" style="display:none">
+      <span class="slbl">📚 היסטוריה</span>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <!-- WI PANEL -->
+  <div id="sp-w" style="display:none">
+    <div class="ss">
+      <span class="slbl">📋 הוראות עבודה</span>
+      <p style="font-size:11px;color:var(--text4);margin-bottom:12px;line-height:1.6">מלא פרטים לקבלת Routing Card מלא המתאים ל-Priority</p>
+      <div class="wi-fg"><label class="wi-lbl">מק"ט קונקטור</label><input class="wi-inp" id="wi-pn" placeholder="DTM04-4P"></div>
+      <div class="wi-fg"><label class="wi-lbl">חוט AWG</label><input class="wi-inp" id="wi-awg" placeholder="22"></div>
+      <div class="wi-fg"><label class="wi-lbl">מספר פינים</label><input class="wi-inp" id="wi-pins" placeholder="4"></div>
+      <div class="wi-fg"><label class="wi-lbl">סוג מגע</label>
+        <select class="wi-inp" id="wi-ct" style="font-family:var(--main)">
+          <option value="solid">Solid Contact</option>
+          <option value="sf">Stamped &amp; Formed</option>
+        </select>
+      </div>
+      <div class="wi-fg"><label class="wi-lbl">כלי לחיצה</label><input class="wi-inp" id="wi-tool" placeholder="HDT-48-00"></div>
+      <div class="wi-fg"><label class="wi-lbl">דרישות מיוחדות</label><input class="wi-inp" id="wi-notes" placeholder="IP68, סיליקון..."></div>
+      <button class="btn-p" onclick="runWI()" id="wi-run-btn" style="margin-top:4px"><span id="wi-ico">🛠️</span><span id="wi-txt">צור הוראות עבודה</span></button>
+      <button class="btn-s" onclick="window.print()">🖨️ הדפס Routing Card</button>
+    </div>
+  </div>
+
+</div><!-- /sidebar -->
+
+<!-- ═══ CONTENT ═══ -->
+<div class="content" id="content">
+  <div class="empty" id="empty-state">
+    <div class="e-ico">🔌</div>
+    <div class="e-ttl">מנתח מק"טים טכני</div>
+    <div class="e-sub">הפלט מובנה לפי נושאים ומוכן לייבוא ל-Priority, Excel ו-JSON</div>
+    <div class="e-chips">
+      <span class="e-chip" onclick="qpn('DTM04-4P')">DTM04-4P</span>
+      <span class="e-chip" onclick="qpn('DTM06-4S')">DTM06-4S</span>
+      <span class="e-chip" onclick="qpn('1-967622-1')">1-967622-1</span>
+      <span class="e-chip" onclick="qpn('172153-1')">172153-1</span>
+      <span class="e-chip" onclick="qpn('53261-0271')">53261-0271</span>
+      <span class="e-chip" onclick="qpn('0460-202-20141')">0460-202-20141</span>
+    </div>
+  </div>
+</div>
+</div><!-- /layout -->
+
+<script>
+// ─── globals ──────────────────────────────────────────────────────────────────
+let prov='claude', mode='s', raw='', curPN='', curData=null, hist=[], busy=false, fs=14;
+
+// ─── font ─────────────────────────────────────────────────────────────────────
+function chgFs(d){
+  fs=Math.min(22,Math.max(10,fs+d));
+  document.documentElement.style.setProperty('--fs',fs+'px');
+  document.getElementById('fc-val').textContent=fs;
+}
+
+// ─── sidebar tabs ─────────────────────────────────────────────────────────────
+function sstab(t){
+  document.getElementById('stab-a').style.cssText=t==='a'?'flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid var(--pri);margin-bottom:-2px;color:var(--pri);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer':'flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid transparent;margin-bottom:-2px;color:var(--text4);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer';
+  document.getElementById('stab-w').style.cssText=t==='w'?'flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid var(--pri);margin-bottom:-2px;color:var(--pri);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer':'flex:1;padding:8px 4px;background:none;border:none;border-bottom:2.5px solid transparent;margin-bottom:-2px;color:var(--text4);font-family:var(--main);font-size:11px;font-weight:700;cursor:pointer';
+  document.getElementById('sp-a').style.display=t==='a'?'block':'none';
+  document.getElementById('sp-w').style.display=t==='w'?'block':'none';
+}
+
+// ─── providers ────────────────────────────────────────────────────────────────
+const PROVS={
+  claude:{models:[{v:'claude-sonnet-4-20250514',l:'claude-sonnet-4 (מומלץ)'},{v:'claude-opus-4-5',l:'claude-opus-4.5'},{v:'claude-haiku-4-5-20251001',l:'claude-haiku-4.5 (מהיר)'}],ph:'sk-ant-api03-...'},
+  openai:{models:[{v:'gpt-4o',l:'GPT-4o (מומלץ)'},{v:'gpt-4o-mini',l:'GPT-4o Mini'},{v:'gpt-4-turbo',l:'GPT-4 Turbo'}],ph:'sk-...'},
+  gemini:{models:[{v:'gemini-2.5-flash',l:'Gemini 2.5 Flash (מאוזן)'},{v:'gemini-2.5-pro',l:'Gemini 2.5 Pro'},{v:'gemini-2.5-flash-lite',l:'Gemini 2.5 Flash-Lite'}],ph:'AIza...'}
+};
+function selProv(p){
+  prov=p;
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pb-'+p).classList.add('on');
+  const c=PROVS[p];
+  document.getElementById('mdl-sel').innerHTML=c.models.map(m=>`<option value="${m.v}">${m.l}</option>`).join('');
+  document.getElementById('api-k').placeholder=c.ph;
+  chkKey();
+}
+selProv('claude');
+function setMode(m){mode=m;document.getElementById('mb-s').classList.toggle('on',m==='s');document.getElementById('mb-b').classList.toggle('on',m==='b');document.getElementById('in-s').style.display=m==='s'?'block':'none';document.getElementById('in-b').style.display=m==='b'?'block':'none';}
+function chkKey(){
+  const k=document.getElementById('api-k').value.trim();
+  const dot=document.getElementById('kdot'),txt=document.getElementById('ktxt');
+  if(!k){dot.className='dot';txt.textContent='המתן להזנת מפתח';return;}
+  const ok={claude:k.startsWith('sk-ant'),openai:k.startsWith('sk-'),gemini:k.startsWith('AIza')||k.length>20}[prov];
+  dot.className='dot '+(ok?'g':'y');txt.textContent=ok?'מפתח נראה תקין ✓':'פורמט לא מוכר';
+}
+function toggleEye(){const i=document.getElementById('api-k');i.type=i.type==='password'?'text':'password';}
+function qpn(pn){document.getElementById('pn-inp').value=pn;setMode('s');sstab('a');}
+
+// ─── System prompt ────────────────────────────────────────────────────────────
+const SP=`אתה מומחה טכני בכיר בחיווט תעשייתי (TE Connectivity, Deutsch, Molex, Amphenol, JST).
+עליך להחזיר JSON תקני ומלא בלבד — ללא טקסט לפני ואחרי, ללא markdown backticks.
+מבנה JSON חובה (כל השדות, עברית):
+{
+  "pn": "מק\"ט",
+  "manufacturer": "יצרן",
+  "series": "סדרה",
+  "description": "תיאור",
+  "specs": {"ip":"","temp_range":"","current_a":"","voltage_v":"","material":"","pitch_mm":""},
+  "parts": [{"pn":"","description":"","type":"housing|pin|socket|wedgelock|backshell|seal|tool","awg_range":"","coating":"","qty_default":1,"notes":""}],
+  "mating": {"plug_pn":"","socket_contacts":[{"pn":"","awg_range":"","coating":""}]},
+  "pin_layout": {"type":"","rows":0,"cols":0,"total_pins":0,"numbering":"","notes":""},
+  "pricing": [{"pn":"","description":"","qty_default":1,"price_100":0,"price_1000":0,"currency":"USD"}],
+  "bom_totals": {"qty_100":0,"total_100":0,"qty_1000":0,"total_1000":0,"currency":"USD"},
+  "alternatives": [{"pn":"","description":"","saving_pct":0,"notes":""}],
+  "crimp_tools": [{"pn":"","name":"","type":"hand|applicator","setting":"","crimp_height_mm":"","compatible_contacts":""}],
+  "work_instructions": [{"step":1,"title":"","duration_sec":0,"actions":[""],"params":{},"warnings":[""]}],
+  "qc_checklist": [{"id":"QC-01","check":"","method":"","accept_criteria":"","priority":"critical|high|standard"}],
+  "timing": {"single_pin_sec":0,"full_connector_sec":0,"method":"manual|semi-auto|automatic"},
+  "alerts": [{"level":"warning|critical|info","code":"","title":"","description":"","recommendation":""}],
+  "engineering_checks": {"wire_barrel":"pass|fail|na","insulation_barrel":"pass|fail|na","housing_entry":"pass|fail|na","notes":""},
+  "standards": {"ip_rating":"","rohs":true,"mil_spec":false,"mil_spec_ref":""},
+  "weight_100units_g": 0,
+  "sources": [{"type":"datasheet|digikey|mouser","url":"","title":""}]
+}`;
+
+const SP_WI=`אתה מומחה ייצור. החזר JSON בלבד (ללא backticks):
+{
+  "pn":"","title":"הוראות עבודה","created":"","revision":"A",
+  "tools_required":[{"name":"","pn":"","notes":""}],
+  "materials":[{"pn":"","description":"","qty":1,"unit":""}],
+  "steps":[{"step":1,"title":"","duration_min":0,"actions":[""],"params":{"awg":"","strip_mm":"","crimp_h":"","pull_force_n":""},"warnings":[""],"qc_point":false}],
+  "qc_checklist":[{"id":"","check":"","accept_criteria":"","priority":"critical|high|standard"}],
+  "safety_notes":[""],
+  "timing_summary":{"total_min":0,"per_pin_sec":0}
+}`;
+
+// ─── API calls ─────────────────────────────────────────────────────────────────
+async function callAPI(sys,msg){
+  const k=document.getElementById('api-k').value.trim();
+  const mdl=document.getElementById('mdl-sel').value;
+  if(prov==='claude'){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:mdl,max_tokens:8000,system:sys,messages:[{role:'user',content:msg}]})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Claude ${r.status}: ${e.error?.message||r.statusText}`);}
+    return (await r.json()).content?.[0]?.text||'{}';
+  }
+  if(prov==='openai'){
+    const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${k}`},
+      body:JSON.stringify({model:mdl,max_tokens:8000,messages:[{role:'system',content:sys},{role:'user',content:msg}]})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`OpenAI ${r.status}: ${e.error?.message||r.statusText}`);}
+    return (await r.json()).choices?.[0]?.message?.content||'{}';
+  }
+  if(prov==='gemini'){
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${k}`;
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{maxOutputTokens:8000}})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Gemini ${r.status}: ${e.error?.message||r.statusText}`);}
+    return (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text||'{}';
+  }
+}
+
+function parseJSON(txt){
+  try{
+    const clean=txt.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  }catch(e){
+    // try to extract JSON object
+    const m=txt.match(/\{[\s\S]*\}/);
+    if(m){try{return JSON.parse(m[0]);}catch(e2){}}
+    return null;
+  }
+}
+
+// ─── Run ───────────────────────────────────────────────────────────────────────
+async function run(){
+  if(busy)return;
+  const k=document.getElementById('api-k').value.trim();
+  if(!k){showErr('נא להזין API Key','הזן מפתח API בשדה המתאים.');return;}
+  const pnRaw=mode==='s'?document.getElementById('pn-inp').value.trim().toUpperCase():document.getElementById('pn-bulk').value.trim();
+  if(!pnRaw){showErr('נא להזין מק"ט','הזן מספר חלק.');return;}
+  busy=true;curPN=pnRaw;
+  setBusy('run-btn','run-ico','run-txt',true,'⏳','מנתח...');
+  const pns=mode==='b'?pnRaw.split('\n').map(s=>s.trim()).filter(Boolean):[pnRaw];
+  showLoad(pns[0]);
+  try{
+    const results=[];
+    for(let i=0;i<pns.length;i++){
+      updLoad(i,pns.length);
+      const txt=await callAPI(SP,`נתח את המק"ט: ${pns[i]}\nהחזר JSON מלא בלבד.`);
+      const d=parseJSON(txt);
+      if(d){d._rawText=txt;results.push(d);}
+      else{results.push({pn:pns[i],_error:'לא ניתן לפרסר JSON',_rawText:txt});}
+    }
+    curData=results.length===1?results[0]:results;
+    addHist(pns[0],curData);
+    showResult(pns[0],results[0]);
+  }catch(e){showErr('שגיאת API',e.message||'שגיאה לא ידועה');}
+  finally{busy=false;setBusy('run-btn','run-ico','run-txt',false,'⚡','נתח מק"ט');}
+}
+
+async function runWI(){
+  if(busy)return;
+  const k=document.getElementById('api-k').value.trim();
+  if(!k){sstab('a');showErr('נא להזין API Key','עבור ללשונית ניתוח והזן API Key.');return;}
+  const pn=document.getElementById('wi-pn').value.trim();
+  if(!pn){alert('נא להזין מק"ט');return;}
+  const awg=document.getElementById('wi-awg').value.trim()||'לא צוין';
+  const pins=document.getElementById('wi-pins').value.trim()||'לא צוין';
+  const ct=document.getElementById('wi-ct').value==='solid'?'Solid Contact':'Stamped & Formed';
+  const tool=document.getElementById('wi-tool').value.trim()||'לא צוין';
+  const notes=document.getElementById('wi-notes').value.trim()||'אין';
+  busy=true;curPN=pn;
+  setBusy('wi-run-btn','wi-ico','wi-txt',true,'⏳','מייצר...');
+  showLoad(pn,true);
+  try{
+    const txt=await callAPI(SP_WI,`צור הוראות עבודה:\nמק"ט:${pn}\nAWG:${awg}\nפינים:${pins}\nמגע:${ct}\nכלי:${tool}\nהערות:${notes}`);
+    const d=parseJSON(txt);
+    curData=d||{pn,_rawText:txt};
+    addHist(pn,curData,'wi');
+    showWIResult(pn,d);
+  }catch(e){showErr('שגיאת API',e.message||'שגיאה לא ידועה');}
+  finally{busy=false;setBusy('wi-run-btn','wi-ico','wi-txt',false,'🛠️','צור הוראות עבודה');}
+}
+
+function setBusy(bid,iid,tid,dis,ico,txt){
+  document.getElementById(bid).disabled=dis;
+  document.getElementById(iid).textContent=ico;
+  document.getElementById(tid).textContent=txt;
+}
+
+// ─── Loading ───────────────────────────────────────────────────────────────────
+const STEPS=['שולף נתוני Datasheet רשמיים...','מנתח מאפיינים טכניים...','בונה BOM ותמחור...','בודק בדיקות הנדסיות...','מכין פלט מובנה JSON...','מסדר טבלאות לייבוא...'];
+const WSTEPS=['מנתח פרמטרי חיווט...','בונה שלבי עבודה...','מחשב זמני תקן...','מכין QC Checklist...','מסדר לפורמט Priority...'];
+function showLoad(pn,isWI=false){
+  const steps=isWI?WSTEPS:STEPS;
+  document.getElementById('content').innerHTML=`<div class="loading">
+    <div class="l-pn">${pn}</div>
+    <div class="l-bar"><div class="l-fill"></div></div>
+    <div class="l-steps">${steps.map((s,i)=>`<div class="lstep ${i===0?'on':''}" id="ls${i}"><span class="ldot"></span><span>${s}</span></div>`).join('')}</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text4)" id="ltxt">מחבר ל-${prov.toUpperCase()}...</div>
+  </div>`;
+  let si=0;const iv=setInterval(()=>{
+    if(si>0){const p=document.getElementById('ls'+(si-1));if(p)p.className='lstep done';}
+    const c=document.getElementById('ls'+si);if(c)c.className='lstep on';
+    si++;if(si>=steps.length)clearInterval(iv);
+  },900);
+}
+function updLoad(i,t){const el=document.getElementById('ltxt');if(el)el.textContent=t>1?`מנתח ${i+1}/${t}...`:'מעבד...';}
+
+// ─── Show result ───────────────────────────────────────────────────────────────
+function showResult(pn,d){
+  if(!d||d._error){
+    // fallback: show raw text in a readable way
+    document.getElementById('content').innerHTML=`<div class="result-wrap">
+      <div class="result-hdr"><div><div class="result-pn">${pn}</div></div></div>
+      <div style="padding:20px 24px">
+        <div class="alert-card warn"><div class="ac-icon">⚠️</div><div><div class="ac-title" style="color:#92400e">לא ניתן לפרסר JSON</div><div class="ac-body">המודל לא החזיר JSON תקני. נסה שוב עם מודל שונה.</div></div></div>
+        <div class="section-card"><div class="sc-hdr"><span class="sc-title">📄 תשובה גולמית</span></div>
+        <div style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.7;overflow-x:auto">${escHtml(d?._rawText||'')}</div></div>
+      </div></div>`;
+    return;
+  }
+
+  const alertCount=(d.alerts||[]).length;
+  const critAlerts=(d.alerts||[]).filter(a=>a.level==='critical').length;
+  const engFail=Object.values(d.engineering_checks||{}).filter(v=>v==='fail').length;
+  const totalWarnings=critAlerts+engFail;
+
+  document.getElementById('content').innerHTML=`<div class="result-wrap">
+    <div class="result-hdr">
+      <div>
+        <div class="result-pn">${d.pn||pn}</div>
+        <div class="result-badges">
+          <span class="result-badge">${d.manufacturer||''} · ${d.series||''}</span>
+          ${d.specs?.ip_rating||d.standards?.ip_rating?`<span class="result-badge ok">${d.specs?.ip_rating||d.standards?.ip_rating}</span>`:''}
+          ${totalWarnings>0?`<span class="result-badge danger">⚠️ ${totalWarnings} התראות</span>`:'<span class="result-badge ok">✅ ללא התראות</span>'}
+          ${d.standards?.rohs?'<span class="result-badge ok">RoHS</span>':''}
+          <span class="result-badge">${prov.toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="r-btn" onclick="expPriority()">🔶 Priority</button>
+        <button class="r-btn" onclick="expExcel()">📗 Excel</button>
+        <button class="r-btn" onclick="expJSON()">📄 JSON</button>
+        <button class="r-btn" onclick="window.print()">🖨️</button>
+      </div>
+    </div>
+    <div class="rtabs">
+      <button class="rtab on" onclick="showTab('parts')" id="rt-parts">🔌 מק"טים <span class="cnt">${(d.parts||[]).length}</span></button>
+      <button class="rtab" onclick="showTab('pricing')" id="rt-pricing">💰 תמחור <span class="cnt">${(d.pricing||[]).length}</span></button>
+      <button class="rtab" onclick="showTab('wi')" id="rt-wi">📋 הוראות עבודה <span class="cnt">${(d.work_instructions||[]).length}</span></button>
+      <button class="rtab" onclick="showTab('alerts')" id="rt-alerts">⚠️ התראות <span class="cnt" style="${totalWarnings>0?'background:var(--danger);color:#fff':''}">${totalWarnings}</span></button>
+      <button class="rtab" onclick="showTab('qc')" id="rt-qc">✅ בקרת איכות <span class="cnt">${(d.qc_checklist||[]).length}</span></button>
+    </div>
+    <div id="tab-parts" class="tpanel on">${buildPartsTab(d)}</div>
+    <div id="tab-pricing" class="tpanel">${buildPricingTab(d)}</div>
+    <div id="tab-wi" class="tpanel">${buildWITab(d)}</div>
+    <div id="tab-alerts" class="tpanel">${buildAlertsTab(d)}</div>
+    <div id="tab-qc" class="tpanel">${buildQCTab(d)}</div>
+  </div>`;
+}
+
+function showWIResult(pn,d){
+  if(!d){showErr('שגיאה','לא ניתן לפרסר תשובה.');return;}
+  document.getElementById('content').innerHTML=`<div class="result-wrap">
+    <div class="result-hdr">
+      <div><div class="result-pn">${pn}</div><div class="result-badges"><span class="result-badge">הוראות עבודה</span><span class="result-badge">${prov.toUpperCase()}</span></div></div>
+      <div class="result-actions">
+        <button class="r-btn" onclick="expPriority()">🔶 Priority</button>
+        <button class="r-btn" onclick="expJSON()">📄 JSON</button>
+        <button class="r-btn" onclick="window.print()">🖨️ הדפס</button>
+      </div>
+    </div>
+    <div class="rtabs">
+      <button class="rtab on" onclick="showTab('wi-steps')" id="rt-wi-steps">📋 שלבי עבודה</button>
+      <button class="rtab" onclick="showTab('wi-qc')" id="rt-wi-qc">✅ QC</button>
+      <button class="rtab" onclick="showTab('wi-tools')" id="rt-wi-tools">🔧 כלים וחומרים</button>
+    </div>
+    <div id="tab-wi-steps" class="tpanel on">${buildWISteps(d)}</div>
+    <div id="tab-wi-qc" class="tpanel">${buildWIQC(d)}</div>
+    <div id="tab-wi-tools" class="tpanel">${buildWITools(d)}</div>
+  </div>`;
+}
+
+function showTab(id){
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  const panel=document.getElementById('tab-'+id);
+  const tab=document.getElementById('rt-'+id);
+  if(panel)panel.classList.add('on');
+  if(tab)tab.classList.add('on');
+}
+
+// ─── Tab builders ──────────────────────────────────────────────────────────────
+function buildPartsTab(d){
+  let html='';
+
+  // Main connector info
+  html+=`<div class="section-card">
+    <div class="sc-hdr"><span class="sc-title">📦 פרטי קונקטור</span>
+      <button class="sc-copy" onclick="copyTbl('tbl-connector')">העתק</button>
+    </div>
+    <table class="dtbl" id="tbl-connector">
+      <tr><th>שדה</th><th>ערך</th></tr>
+      <tr><td>מק"ט</td><td class="mono">${d.pn||'—'}</td></tr>
+      <tr><td>יצרן</td><td>${d.manufacturer||'—'}</td></tr>
+      <tr><td>סדרה</td><td>${d.series||'—'}</td></tr>
+      <tr><td>תיאור</td><td>${d.description||'—'}</td></tr>
+      ${d.specs?Object.entries(d.specs).filter(([k,v])=>v).map(([k,v])=>`<tr><td>${k}</td><td class="mono">${v}</td></tr>`).join(''):''}
+    </table>
+  </div>`;
+
+  // Parts list
+  const parts=d.parts||[];
+  if(parts.length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">🔩 רשימת חלקים מלאה</span>
+        <button class="sc-copy" onclick="copyTbl('tbl-parts')">העתק</button>
+      </div>
+      <table class="dtbl" id="tbl-parts">
+        <tr><th>#</th><th>מק"ט</th><th>סוג</th><th>תיאור</th><th>AWG</th><th>ציפוי</th><th>כמות</th><th>הערות</th></tr>
+        ${parts.map((p,i)=>`<tr>
+          <td>${i+1}</td>
+          <td class="mono">${p.pn||'—'}</td>
+          <td><span class="sc-badge" style="background:var(--pri-l);color:var(--pri)">${p.type||''}</span></td>
+          <td>${p.description||'—'}</td>
+          <td class="mono">${p.awg_range||'—'}</td>
+          <td>${p.coating||'—'}</td>
+          <td style="text-align:center;font-family:var(--mono)">${p.qty_default||1}</td>
+          <td style="font-size:11px;color:var(--text3)">${p.notes||''}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  // Mating parts
+  if(d.mating){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">🔗 מק"טים משלימים (Mating)</span></div>
+      <table class="dtbl">
+        <tr><th>מק"ט</th><th>סוג</th><th>AWG</th><th>ציפוי</th></tr>
+        ${d.mating.plug_pn?`<tr><td class="mono">${d.mating.plug_pn}</td><td>Plug Housing</td><td>—</td><td>—</td></tr>`:''}
+        ${(d.mating.socket_contacts||[]).map(c=>`<tr><td class="mono">${c.pn||'—'}</td><td>Socket Contact</td><td class="mono">${c.awg_range||'—'}</td><td>${c.coating||'—'}</td></tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  // Pin layout
+  if(d.pin_layout){
+    const pl=d.pin_layout;
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">📐 Pin Layout</span></div>
+      <table class="dtbl">
+        <tr><th>שדה</th><th>ערך</th></tr>
+        <tr><td>סוג פריסה</td><td>${pl.type||'—'}</td></tr>
+        <tr><td>שורות × עמודות</td><td class="mono">${pl.rows||'—'} × ${pl.cols||'—'}</td></tr>
+        <tr><td>סה"כ פינים</td><td class="mono">${pl.total_pins||'—'}</td></tr>
+        <tr><td>מיספור</td><td>${pl.numbering||'—'}</td></tr>
+        ${pl.notes?`<tr><td>הערות</td><td style="font-size:12px">${pl.notes}</td></tr>`:''}
+      </table>
+    </div>`;
+  }
+
+  // Crimp tools
+  const tools=d.crimp_tools||[];
+  if(tools.length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">🔧 כלי לחיצה</span></div>
+      <table class="dtbl">
+        <tr><th>מק"ט</th><th>שם</th><th>סוג</th><th>הגדרה</th><th>Crimp Height</th><th>מגעים תואמים</th></tr>
+        ${tools.map(t=>`<tr>
+          <td class="mono">${t.pn||'—'}</td>
+          <td>${t.name||'—'}</td>
+          <td>${t.type||'—'}</td>
+          <td class="mono">${t.setting||'—'}</td>
+          <td class="mono">${t.crimp_height_mm||'—'} mm</td>
+          <td style="font-size:11px">${t.compatible_contacts||'—'}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  return html||'<p style="color:var(--text4);padding:20px">אין נתונים</p>';
+}
+
+function buildPricingTab(d){
+  const pricing=d.pricing||[];
+  const totals=d.bom_totals||{};
+  const alts=d.alternatives||[];
+  let html='';
+
+  if(pricing.length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">💰 BOM מלאה – תמחור</span>
+        <button class="sc-copy" onclick="copyTbl('tbl-pricing')">העתק לאקסל</button>
+      </div>
+      <table class="dtbl" id="tbl-pricing">
+        <tr><th>#</th><th>מק"ט</th><th>תיאור</th><th>כמות</th><th>מחיר/יח' (×100)</th><th>סה"כ (×100)</th><th>מחיר/יח' (×1000)</th><th>סה"כ (×1000)</th></tr>
+        ${pricing.map((p,i)=>`<tr>
+          <td>${i+1}</td>
+          <td class="mono">${p.pn||'—'}</td>
+          <td>${p.description||'—'}</td>
+          <td style="text-align:center;font-family:var(--mono)">${p.qty_default||1}</td>
+          <td class="price">$${(p.price_100||0).toFixed(3)}</td>
+          <td class="price">$${((p.price_100||0)*(p.qty_default||1)).toFixed(3)}</td>
+          <td class="price">$${(p.price_1000||0).toFixed(3)}</td>
+          <td class="price">$${((p.price_1000||0)*(p.qty_default||1)).toFixed(3)}</td>
+        </tr>`).join('')}
+        ${totals.total_100!==undefined?`<tr class="subtotal">
+          <td colspan="5">סה"כ קונקטור מלא (×100 יח')</td>
+          <td class="total">$${(totals.total_100||0).toFixed(2)}</td>
+          <td></td>
+          <td class="total">$${(totals.total_1000||0).toFixed(2)}</td>
+        </tr>`:''}
+      </table>
+    </div>`;
+  }
+
+  // Timing
+  if(d.timing){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">⏱️ זמני תקן ללחיצה</span></div>
+      <table class="dtbl">
+        <tr><th>פרמטר</th><th>ערך</th></tr>
+        <tr><td>זמן לפין אחד</td><td class="mono">${d.timing.single_pin_sec||'—'} שניות</td></tr>
+        <tr><td>זמן קונקטור מלא</td><td class="mono">${d.timing.full_connector_sec||'—'} שניות</td></tr>
+        <tr><td>שיטה</td><td>${d.timing.method||'—'}</td></tr>
+      </table>
+    </div>`;
+  }
+
+  // Alternatives
+  if(alts.length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">💡 חלופות וחיסכון (Cost Optimizer)</span></div>
+      <table class="dtbl">
+        <tr><th>מק"ט חלופה</th><th>תיאור</th><th>חיסכון %</th><th>הערות</th></tr>
+        ${alts.map(a=>`<tr>
+          <td class="mono">${a.pn||'—'}</td>
+          <td>${a.description||'—'}</td>
+          <td class="ok-cell">-${a.saving_pct||0}%</td>
+          <td style="font-size:11px">${a.notes||''}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  // Sources
+  if((d.sources||[]).length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">🔗 מקורות ורכש</span></div>
+      <table class="dtbl">
+        <tr><th>סוג</th><th>קישור</th></tr>
+        ${(d.sources||[]).map(s=>`<tr><td>${s.type||''}</td><td><a href="${s.url||'#'}" target="_blank" style="color:var(--pri);font-family:var(--mono);font-size:11px">${s.title||s.url||'—'}</a></td></tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  return html||'<p style="color:var(--text4);padding:20px">אין נתוני תמחור</p>';
+}
+
+function buildWITab(d){
+  const steps=d.work_instructions||[];
+  if(!steps.length) return '<p style="color:var(--text4);padding:20px">אין הוראות עבודה. השתמש בלשונית "הוראות עבודה" לייצור מפורט.</p>';
+  return steps.map(s=>`
+    <div class="wi-step">
+      <div class="wi-step-hdr">
+        <div class="wi-num">${s.step}</div>
+        <div class="wi-step-title">${s.title||''}</div>
+        ${s.duration_sec?`<span style="margin-right:auto;font-family:var(--mono);font-size:10px;color:var(--text4)">⏱ ${s.duration_sec}שנ'</span>`:''}
+      </div>
+      <div class="wi-step-body">
+        ${(s.actions||[]).length?`<ul>${(s.actions||[]).map(a=>`<li>${a}</li>`).join('')}</ul>`:''}
+        ${s.params&&Object.keys(s.params).length?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">${Object.entries(s.params).filter(([k,v])=>v).map(([k,v])=>`<span class="param">${k}: ${v}</span>`).join('')}</div>`:''}
+        ${(s.warnings||[]).filter(w=>w).length?`<div style="margin-top:8px">${(s.warnings||[]).filter(w=>w).map(w=>`<div class="alert-card warn" style="padding:8px 12px;margin-bottom:6px"><div class="ac-icon" style="font-size:14px">⚠️</div><div class="ac-body">${w}</div></div>`).join('')}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function buildAlertsTab(d){
+  const alerts=d.alerts||[];
+  const ec=d.engineering_checks||{};
+  let html='';
+
+  // Engineering checks summary
+  html+=`<div class="section-card">
+    <div class="sc-hdr"><span class="sc-title">🔬 בדיקות הנדסיות</span></div>
+    <table class="dtbl">
+      <tr><th>בדיקה</th><th>תוצאה</th></tr>
+      <tr><td>Wire Barrel</td><td class="${ec.wire_barrel==='pass'?'ok-cell':ec.wire_barrel==='fail'?'danger-cell':'warn-cell'}">${ec.wire_barrel==='pass'?'✅ עובר':ec.wire_barrel==='fail'?'❌ נכשל':'—'}</td></tr>
+      <tr><td>Insulation Barrel</td><td class="${ec.insulation_barrel==='pass'?'ok-cell':ec.insulation_barrel==='fail'?'danger-cell':'warn-cell'}">${ec.insulation_barrel==='pass'?'✅ עובר':ec.insulation_barrel==='fail'?'❌ נכשל':'—'}</td></tr>
+      <tr><td>Housing Entry</td><td class="${ec.housing_entry==='pass'?'ok-cell':ec.housing_entry==='fail'?'danger-cell':'warn-cell'}">${ec.housing_entry==='pass'?'✅ עובר':ec.housing_entry==='fail'?'❌ נכשל':'—'}</td></tr>
+      ${ec.notes?`<tr><td colspan="2" style="font-size:12px;color:var(--text3)">${ec.notes}</td></tr>`:''}
+    </table>
+  </div>`;
+
+  // Standards
+  if(d.standards){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">📋 תקנים ואישורים</span></div>
+      <table class="dtbl">
+        <tr><th>תקן</th><th>סטטוס</th></tr>
+        ${d.standards.ip_rating?`<tr><td>IP Rating</td><td class="ok-cell mono">${d.standards.ip_rating}</td></tr>`:''}
+        <tr><td>RoHS</td><td class="${d.standards.rohs?'ok-cell':'warn-cell'}">${d.standards.rohs?'✅ תואם':'לא מצוין'}</td></tr>
+        <tr><td>MIL-SPEC</td><td class="${d.standards.mil_spec?'ok-cell':'warn-cell'}">${d.standards.mil_spec?`✅ ${d.standards.mil_spec_ref||''}`:d.standards.mil_spec_ref||'לא מאושר'}</td></tr>
+      </table>
+    </div>`;
+  }
+
+  // Alerts
+  if(alerts.length){
+    html+=`<div class="section-card">
+      <div class="sc-hdr"><span class="sc-title">⚠️ התראות הנדסיות</span></div>
+      <div style="padding:10px 12px">
+        ${alerts.map(a=>`
+          <div class="alert-card ${a.level==='critical'?'danger':a.level==='warning'?'warn':'info'}">
+            <div class="ac-icon">${a.level==='critical'?'❌':a.level==='warning'?'⚠️':'ℹ️'}</div>
+            <div>
+              <div class="ac-title" style="color:${a.level==='critical'?'#991b1b':a.level==='warning'?'#92400e':var_info}">${a.code||''} – ${a.title||''}</div>
+              <div class="ac-body">${a.description||''}</div>
+              ${a.recommendation?`<div class="ac-body" style="margin-top:4px;font-weight:600">המלצה: ${a.recommendation}</div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }else{
+    html+=`<div class="alert-card ok"><div class="ac-icon">✅</div><div><div class="ac-title" style="color:#065f46">אין התראות הנדסיות</div><div class="ac-body">כל הבדיקות עברו בהצלחה.</div></div></div>`;
+  }
+
+  return html;
+}
+
+const var_info='var(--info)';
+
+function buildQCTab(d){
+  const items=d.qc_checklist||[];
+  if(!items.length) return '<p style="color:var(--text4);padding:20px">אין פריטי QC</p>';
+
+  const total=items.length;
+  const crit=items.filter(i=>i.priority==='critical').length;
+
+  return `<div class="section-card">
+    <div class="sc-hdr">
+      <span class="sc-title">✅ QC Checklist – ${total} פריטים (${crit} קריטיים)</span>
+      <button class="sc-copy" onclick="resetQC()">איפוס</button>
+    </div>
+    <div style="padding:10px 16px 4px">
+      <div class="qc-stat"><span id="qc-done-txt">0 / ${total} הושלמו</span><span id="qc-pct">0%</span></div>
+      <div class="qc-progress"><div class="qc-bar" id="qc-bar" style="width:0%"></div></div>
+    </div>
+    <div id="qc-list">
+      ${items.map((item,i)=>`
+        <div class="qc-item" id="qci-${i}" onclick="togQC(${i},${total})">
+          <div class="qc-check" id="qcc-${i}">✓</div>
+          <div>
+            <div class="qc-label" id="qcl-${i}">${item.check||'—'}</div>
+            ${item.accept_criteria?`<div style="font-size:10px;color:var(--text4);margin-top:2px">קריטריון: ${item.accept_criteria}</div>`:''}
+            ${item.method?`<div style="font-size:10px;color:var(--text4)">שיטה: ${item.method}</div>`:''}
+          </div>
+          <span class="qc-badge ${item.priority==='critical'?'critical':item.priority==='high'?'high':'std'}">${item.priority==='critical'?'קריטי':item.priority==='high'?'גבוה':'סטנדרט'}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+let qcChecked=new Set();
+function togQC(i,total){
+  if(qcChecked.has(i))qcChecked.delete(i);else qcChecked.add(i);
+  document.getElementById('qci-'+i).classList.toggle('checked',qcChecked.has(i));
+  document.getElementById('qcc-'+i).style.background=qcChecked.has(i)?'var(--ok)':'';
+  document.getElementById('qcc-'+i).style.borderColor=qcChecked.has(i)?'var(--ok)':'var(--border)';
+  document.getElementById('qcc-'+i).style.color=qcChecked.has(i)?'#fff':'transparent';
+  const pct=Math.round(qcChecked.size/total*100);
+  document.getElementById('qc-bar').style.width=pct+'%';
+  document.getElementById('qc-done-txt').textContent=`${qcChecked.size} / ${total} הושלמו`;
+  document.getElementById('qc-pct').textContent=pct+'%';
+}
+function resetQC(){qcChecked.clear();document.querySelectorAll('.qc-item').forEach(el=>el.classList.remove('checked'));document.querySelectorAll('.qc-check').forEach(el=>{el.style.background='';el.style.borderColor='var(--border)';el.style.color='transparent';});if(document.getElementById('qc-bar'))document.getElementById('qc-bar').style.width='0%';}
+
+function buildWISteps(d){
+  const steps=d?.steps||[];
+  if(!steps.length)return '<p style="color:var(--text4);padding:20px">אין שלבים</p>';
+  return `<div style="margin-bottom:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 16px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:4px">⏱️ סיכום זמנים</div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text2)">סה"כ: ${d.timing_summary?.total_min||'—'} דקות | לפין: ${d.timing_summary?.per_pin_sec||'—'} שניות</div>
+  </div>`+
+  steps.map(s=>`
+    <div class="wi-step">
+      <div class="wi-step-hdr">
+        <div class="wi-num">${s.step}</div>
+        <div class="wi-step-title">${s.title||''}</div>
+        ${s.duration_min?`<span style="margin-right:auto;font-family:var(--mono);font-size:10px;color:var(--text4)">⏱ ${s.duration_min}דק'</span>`:''}
+        ${s.qc_point?'<span style="font-size:10px;background:var(--ok-bg);color:var(--ok);border:1px solid #6ee7b7;border-radius:4px;padding:2px 7px;font-family:var(--mono)">QC</span>':''}
+      </div>
+      <div class="wi-step-body">
+        ${(s.actions||[]).length?`<ul>${(s.actions||[]).map(a=>`<li>${a}</li>`).join('')}</ul>`:''}
+        ${s.params&&Object.keys(s.params).length?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">${Object.entries(s.params).filter(([k,v])=>v).map(([k,v])=>`<span class="param">${k}: ${v}</span>`).join('')}</div>`:''}
+        ${(s.warnings||[]).filter(w=>w).length?`<div style="margin-top:8px">${(s.warnings||[]).filter(w=>w).map(w=>`<div class="alert-card warn" style="padding:8px 12px;margin-bottom:5px"><div class="ac-icon" style="font-size:14px">⚠️</div><div class="ac-body">${w}</div></div>`).join('')}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function buildWIQC(d){
+  const items=d?.qc_checklist||[];
+  if(!items.length)return '<p style="color:var(--text4);padding:20px">אין פריטי QC</p>';
+  const total=items.length;
+  return `<div class="section-card">
+    <div class="sc-hdr"><span class="sc-title">✅ QC Checklist</span></div>
+    <div style="padding:10px 16px 4px"><div class="qc-stat"><span id="wqc-done">0/${total}</span><span id="wqc-pct">0%</span></div><div class="qc-progress"><div class="qc-bar" id="wqc-bar" style="width:0%"></div></div></div>
+    ${items.map((item,i)=>`
+      <div class="qc-item" id="wqci-${i}" onclick="togWQC(${i},${total})">
+        <div class="qc-check" id="wqcc-${i}" style="color:transparent">✓</div>
+        <div><div class="qc-label" id="wqcl-${i}">${item.check||'—'}</div>
+          ${item.accept_criteria?`<div style="font-size:10px;color:var(--text4);margin-top:1px">${item.accept_criteria}</div>`:''}
+        </div>
+        <span class="qc-badge ${item.priority==='critical'?'critical':item.priority==='high'?'high':'std'}">${item.priority==='critical'?'קריטי':item.priority==='high'?'גבוה':'סטנדרט'}</span>
+      </div>`).join('')}
+  </div>`;
+}
+let wqcChecked=new Set();
+function togWQC(i,total){
+  if(wqcChecked.has(i))wqcChecked.delete(i);else wqcChecked.add(i);
+  document.getElementById('wqci-'+i).classList.toggle('checked',wqcChecked.has(i));
+  const cc=document.getElementById('wqcc-'+i);
+  cc.style.background=wqcChecked.has(i)?'var(--ok)':'';
+  cc.style.borderColor=wqcChecked.has(i)?'var(--ok)':'var(--border)';
+  cc.style.color=wqcChecked.has(i)?'#fff':'transparent';
+  const pct=Math.round(wqcChecked.size/total*100);
+  document.getElementById('wqc-bar').style.width=pct+'%';
+  document.getElementById('wqc-done').textContent=`${wqcChecked.size}/${total}`;
+  document.getElementById('wqc-pct').textContent=pct+'%';
+}
+
+function buildWITools(d){
+  const tools=d?.tools_required||[];
+  const mats=d?.materials||[];
+  const safety=d?.safety_notes||[];
+  let html='';
+  if(tools.length){
+    html+=`<div class="section-card"><div class="sc-hdr"><span class="sc-title">🔧 כלים נדרשים</span></div>
+      <table class="dtbl"><tr><th>שם</th><th>מק"ט</th><th>הערות</th></tr>
+      ${tools.map(t=>`<tr><td>${t.name||'—'}</td><td class="mono">${t.pn||'—'}</td><td style="font-size:11px">${t.notes||''}</td></tr>`).join('')}
+      </table></div>`;
+  }
+  if(mats.length){
+    html+=`<div class="section-card"><div class="sc-hdr"><span class="sc-title">📦 חומרים</span></div>
+      <table class="dtbl"><tr><th>מק"ט</th><th>תיאור</th><th>כמות</th><th>יחידה</th></tr>
+      ${mats.map(m=>`<tr><td class="mono">${m.pn||'—'}</td><td>${m.description||'—'}</td><td style="text-align:center;font-family:var(--mono)">${m.qty||1}</td><td>${m.unit||'יח\''}</td></tr>`).join('')}
+      </table></div>`;
+  }
+  if(safety.length){
+    html+=`<div class="section-card"><div class="sc-hdr"><span class="sc-title">🦺 הוראות בטיחות</span></div>
+      <div style="padding:12px 16px">${safety.filter(s=>s).map(s=>`<div class="alert-card warn" style="margin-bottom:6px"><div class="ac-icon">⚠️</div><div class="ac-body">${s}</div></div>`).join('')}</div>
+      </div>`;
+  }
+  return html||'<p style="color:var(--text4);padding:20px">אין נתונים</p>';
+}
+
+// ─── Error & loading ───────────────────────────────────────────────────────────
+function showErr(t,m){
+  document.getElementById('content').innerHTML=`<div class="err-box"><div class="err-ico">⚠️</div><div><div class="err-t">${t}</div><div class="err-m">${m}</div></div></div>`;
+}
+
+// ─── History ───────────────────────────────────────────────────────────────────
+function addHist(pn,data,type='analyze'){
+  hist.unshift({pn,data,type,t:new Date().toLocaleTimeString('he-IL'),p:prov});
+  if(hist.length>10)hist.pop();
+  const sec=document.getElementById('hist-sec'),list=document.getElementById('hist-list');
+  sec.style.display='block';
+  list.innerHTML=hist.map((h,i)=>`
+    <div class="h-item ${i===0?'on':''}" onclick="loadHist(${i})">
+      <span class="h-pn">${h.type==='wi'?'📋 ':'🔌 '}${h.pn}</span>
+      <span class="h-meta">${h.p} · ${h.t}</span>
+    </div>`).join('');
+}
+function loadHist(i){
+  const h=hist[i];curData=h.data;curPN=h.pn;
+  if(h.type==='wi')showWIResult(h.pn,h.data);
+  else showResult(h.pn,h.data);
+  document.querySelectorAll('.h-item').forEach((el,j)=>el.classList.toggle('on',j===i));
+}
+
+// ─── Export ────────────────────────────────────────────────────────────────────
+function expJSON(){
+  if(!curData)return;
+  dl(JSON.stringify(curData,null,2),`${curPN}-data.json`,'application/json');
+}
+
+function expMD(){
+  if(!curData)return;
+  const d=curData;
+  let md=`# מק"ט: ${d.pn||curPN}\n\n`;
+  md+=`**יצרן:** ${d.manufacturer||'—'} | **סדרה:** ${d.series||'—'}\n\n`;
+  if(d.parts?.length){
+    md+=`## רשימת חלקים\n| מק"ט | תיאור | סוג | AWG |\n|---|---|---|---|\n`;
+    (d.parts||[]).forEach(p=>md+=`| ${p.pn||''} | ${p.description||''} | ${p.type||''} | ${p.awg_range||''} |\n`);
+    md+='\n';
+  }
+  if(d.pricing?.length){
+    md+=`## תמחור\n| מק"ט | תיאור | כמות | ×100 | ×1000 |\n|---|---|---|---|---|\n`;
+    (d.pricing||[]).forEach(p=>md+=`| ${p.pn||''} | ${p.description||''} | ${p.qty_default||1} | $${(p.price_100||0).toFixed(3)} | $${(p.price_1000||0).toFixed(3)} |\n`);
+    md+='\n';
+  }
+  dl(md,`${curPN}-report.md`,'text/markdown');
+}
+
+function expExcel(){
+  if(!curData)return;
+  const d=curData;
+  let csv='\uFEFF'; // BOM for Hebrew Excel
+  csv+=`"מנתח מק""טים – ${curPN}"\n\n`;
+  csv+=`"=== מק""טים ==="\n`;
+  csv+=`"מק""ט","תיאור","סוג","AWG","ציפוי","כמות","הערות"\n`;
+  (d.parts||[]).forEach(p=>csv+=`"${p.pn||''}","${p.description||''}","${p.type||''}","${p.awg_range||''}","${p.coating||''}","${p.qty_default||1}","${p.notes||''}"\n`);
+  csv+=`\n"=== תמחור ==="\n`;
+  csv+=`"מק""ט","תיאור","כמות","מחיר x100","סה""כ x100","מחיר x1000","סה""כ x1000"\n`;
+  (d.pricing||[]).forEach(p=>csv+=`"${p.pn||''}","${p.description||''}","${p.qty_default||1}","$${(p.price_100||0).toFixed(3)}","$${((p.price_100||0)*(p.qty_default||1)).toFixed(3)}","$${(p.price_1000||0).toFixed(3)}","$${((p.price_1000||0)*(p.qty_default||1)).toFixed(3)}"\n`);
+  if(d.bom_totals){csv+=`"","","","","סה""כ: $${(d.bom_totals.total_100||0).toFixed(2)}","","סה""כ: $${(d.bom_totals.total_1000||0).toFixed(2)}"\n`;}
+  csv+=`\n"=== QC Checklist ==="\n`;
+  csv+=`"מזהה","בדיקה","קריטריון קבלה","שיטה","עדיפות"\n`;
+  (d.qc_checklist||[]).forEach(q=>csv+=`"${q.id||''}","${q.check||''}","${q.accept_criteria||''}","${q.method||''}","${q.priority||''}"\n`);
+  csv+=`\n"=== התראות ==="\n`;
+  csv+=`"רמה","קוד","כותרת","תיאור","המלצה"\n`;
+  (d.alerts||[]).forEach(a=>csv+=`"${a.level||''}","${a.code||''}","${a.title||''}","${a.description||''}","${a.recommendation||''}"\n`);
+  dl(csv,`${curPN}-BOM.csv`,'text/csv;charset=utf-8');
+}
+
+function expPriority(){
+  if(!curData)return;
+  const d=curData;
+  // Priority-compatible flat JSON (PARTNAME / PARTDES / CUSTNAME format)
+  const priorityData={
+    PRIORITY_IMPORT:{
+      TYPE:"PART_BOM",
+      CREATED:new Date().toISOString(),
+      SOURCE_PN:d.pn||curPN,
+      PARTS:(d.parts||[]).map((p,i)=>({
+        ROW:i+1,
+        PARTNAME:p.pn||'',
+        PARTDES:p.description||'',
+        TQUANT:p.qty_default||1,
+        UNIT:'יח\'',
+        TYPE:p.type||'',
+        NOTES:p.notes||''
+      })),
+      PRICING:(d.pricing||[]).map(p=>({
+        PARTNAME:p.pn||'',
+        PARTDES:p.description||'',
+        PRICE_100:p.price_100||0,
+        PRICE_1000:p.price_1000||0,
+        CURRENCY:p.currency||'USD'
+      })),
+      QC:(d.qc_checklist||[]).map(q=>({
+        ID:q.id||'',
+        CHECK:q.check||'',
+        CRITERIA:q.accept_criteria||'',
+        PRIORITY:q.priority||''
+      })),
+      ALERTS:(d.alerts||[]).map(a=>({
+        LEVEL:a.level||'',
+        CODE:a.code||'',
+        TITLE:a.title||'',
+        DESC:a.description||'',
+        REC:a.recommendation||''
+      }))
+    }
+  };
+  dl(JSON.stringify(priorityData,null,2),`${curPN}-priority.json`,'application/json');
+}
+
+// ─── Utils ─────────────────────────────────────────────────────────────────────
+function copyTbl(id){
+  const tbl=document.getElementById(id);
+  if(!tbl)return;
+  let tsv='';
+  for(const row of tbl.rows){
+    const cells=[...row.cells].map(c=>c.innerText.replace(/\n/g,' ').trim());
+    tsv+=cells.join('\t')+'\n';
+  }
+  navigator.clipboard.writeText(tsv).then(()=>{
+    event.target.textContent='✅ הועתק!';setTimeout(()=>event.target.textContent='העתק',2000);
+  });
+}
+
+function cpRaw(){
+  if(!curData)return;
+  navigator.clipboard.writeText(JSON.stringify(curData,null,2)).then(()=>alert('JSON הועתק ללוח'));
+}
+
+function dl(content,fn,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=fn;a.click();
+}
+
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
