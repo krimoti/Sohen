@@ -116,50 +116,56 @@
     }
 
     async function runAnalysis() {
-        const parts = document.getElementById('inputParts').value;
-        const prompt = localStorage.getItem('dazura_prompt') || DEFAULT_PROMPT;
-        const inventory = localStorage.getItem('dazura_inventory') || "";
-        const apiKey = localStorage.getItem('dazura_api_key');
+    const parts = document.getElementById('inputParts').value;
+    const prompt = localStorage.getItem('dazura_prompt') || DEFAULT_PROMPT;
+    const inventory = localStorage.getItem('dazura_inventory') || "";
+    const apiKey = localStorage.getItem('dazura_api_key');
+    
+    const loader = document.getElementById('loader');
+    const output = document.getElementById('output');
+
+    if (!apiKey) {
+        output.innerHTML = "<div class='error-card'>❌ חסר API Key בהגדרות!</div>";
+        return;
+    }
+    if (!parts) return alert("הזן מק\"טים לניתוח");
+
+    loader.style.display = "inline-block";
+    output.innerText = "מתחבר לשרת הנדסי (v1 Stable)...";
+
+    try {
+        // הכתובת המדויקת והיציבה ביותר:
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
-        const loader = document.getElementById('loader');
-        const output = document.getElementById('output');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ 
+                    parts: [{ 
+                        text: `${prompt}\n\nמלאי:\n${inventory}\n\nמק"טים לניתוח:\n${parts}` 
+                    }] 
+                }]
+            })
+        });
 
-        if (!apiKey) {
-            output.innerHTML = "<div class='error-card'>❌ חסר API Key! עבור ללשונית הגדרות והדבק את המפתח שלך.</div>";
-            return;
+        const data = await response.json();
+
+        if (data.candidates && data.candidates[0].content) {
+            // הצלחה! מציגים את התשובה
+            output.innerText = data.candidates[0].content.parts[0].text;
+        } else if (data.error) {
+            // פירוט השגיאה מגוגל
+            output.innerHTML = `<div class='error-card'>❌ שגיאת גוגל: ${data.error.message}</div>`;
+        } else {
+            output.innerHTML = "<div class='error-card'>❌ התקבלה תשובה לא צפויה מהשרת.</div>";
         }
-        if (!parts) return alert("אנא הזן מק\"טים לניתוח.");
-
-        loader.style.display = "inline-block";
-        output.innerText = "הסוכן מנתח את הפרויקט (בודק מודלים זמינים)...";
-
-        // רשימת מודלים לניסיון במקרה של 404 או שגיאה
-        const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
-        let finalResponse = null;
-
-        for (let model of models) {
-            if (finalResponse) break;
-            try {
-                // שימוש ב-v1 הרשמי (Stable)
-                const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `${prompt}\n\nנתוני מלאי:\n${inventory}\n\nמק"טים לניתוח:\n${parts}` }] }]
-                    })
-                });
-
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content) {
-                    finalResponse = data.candidates[0].content.parts[0].text;
-                } else if (data.error) {
-                    console.warn(`Model ${model} failed: ${data.error.message}`);
-                }
-            } catch (e) {
-                console.error(`Error with ${model}:`, e);
-            }
-        }
+    } catch (e) {
+        output.innerHTML = `<div class='error-card'>❌ שגיאת תקשורת: ${e.message}</div>`;
+    } finally {
+        loader.style.display = "none";
+    }
+}
 
         if (finalResponse) {
             output.innerText = finalResponse;
