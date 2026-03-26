@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dazura Expert v14.4 - Ultimate Stable</title>
+    <title>Dazura Expert v14.5 - GitHub Stable</title>
     <style>
         :root { --primary: #1a2a3a; --accent: #3498db; --success: #27ae60; --bg: #f8fafc; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--primary); }
@@ -43,52 +43,51 @@
             <h2 style="margin:0;">🛠️ Dazura Expert</h2>
             <p style="margin:0; font-size:0.85em; color:#718096;">ניהול הנדסה וייצור חיווט</p>
         </div>
-        <span class="version-badge">v14.4 Stable</span>
+        <span class="version-badge">v14.5 GitHub Stable</span>
     </header>
 
     <div class="tabs">
-        <button class="tab active" onclick="showSection('user-section', this)">ניתוח BOM</button>
-        <button class="tab" onclick="showSection('inventory-section', this)">מלאי מחסן</button>
-        <button class="tab" onclick="showSection('admin-section', this)">הגדרות (Admin)</button>
+        <button class="tab active" onclick="showSection('user-section', this)">ניתוח פרויקט</button>
+        <button class="tab" onclick="showSection('inventory-section', this)">מלאי</button>
+        <button class="tab" onclick="showSection('admin-section', this)">הגדרות</button>
     </div>
 
     <div id="user-section" class="section active">
-        <textarea id="inputParts" style="height: 140px;" placeholder="הכנס מק&quot;טים לניתוח (אחד בכל שורה)..."></textarea>
+        <textarea id="inputParts" style="height: 140px;" placeholder="הזן מק&quot;טים (אחד בכל שורה)..."></textarea>
         <div class="btn-group">
             <button onclick="runAnalysis()">
-                <div id="loader" class="loader"></div> נתח פרויקט
+                <div id="loader" class="loader"></div> נתח BOM
             </button>
-            <button style="background:#718096" onclick="window.print()">📄 הדפס PDF ללקוח/ייצור</button>
+            <button style="background:#718096" onclick="window.print()">📄 הדפס PDF</button>
         </div>
-        <div id="output">המתן להזנת נתונים...</div>
+        <div id="output">התוצאות יופיעו כאן לאחר הניתוח...</div>
     </div>
 
     <div id="inventory-section" class="section">
-        <h3>📦 מלאי "כספת"</h3>
-        <p style="font-size:0.9em; color:#4a5568;">הדבק כאן רשימת מלאי (מק"ט, כמות, מיקום). הסוכן יתעדף רכיבים אלו.</p>
+        <h3>📦 רשימת מלאי "כספת"</h3>
         <textarea id="inventoryData" style="height: 250px;" placeholder="Part Number, Quantity, Location..."></textarea>
-        <button style="background:var(--success)" onclick="saveData('dazura_inventory', 'inventoryData')">💾 שמור רשימת מלאי</button>
+        <button style="background:var(--success)" onclick="saveData('dazura_inventory', 'inventoryData')">💾 שמור מלאי</button>
     </div>
 
     <div id="admin-section" class="section">
-        <h3>🧠 הגדרות בינה מלאכותית</h3>
+        <h3>🧠 הגדרות סוכן (AI)</h3>
         <label style="font-weight:bold;">Gemini API Key:</label>
-        <input type="password" id="apiKeyInput" placeholder="הדבק כאן את המפתח מ-Google AI Studio">
+        <input type="password" id="apiKeyInput" placeholder="הדבק כאן את המפתח שקיבלת">
         
-        <label style="font-weight:bold;">הנחיות מערכת (Prompt):</label>
+        <label style="font-weight:bold;">הנחיית מערכת (Prompt):</label>
         <textarea id="systemPromptInput" style="height: 200px;"></textarea>
         
-        <button style="background:var(--success)" onclick="saveAdmin()">💾 שמור הגדרות מערכת</button>
+        <button style="background:var(--success)" onclick="saveAdmin()">💾 שמור הגדרות</button>
     </div>
 </div>
 
 <script>
-    const DEFAULT_PROMPT = `אתה מומחה בכיר להנדסת חיווט וייצור. נתח את המק"טים הבאים וספק דוח מפורט:
-1. זיהוי הנדסי: יצרן, AWG, וקוטר בידוד מקסימלי (OD). האם חוט PVC/סיליקון יתאים?
+    const DEFAULT_PROMPT = `אתה מומחה בכיר להנדסת חיווט. נתח את המק"טים שיתקבלו:
+1. זיהוי והתאמה: יצרן, AWG, וקוטר בידוד מקסימלי. האם חוט PVC/סיליקון/טפלון יתאימו?
 2. מלאי פנימי: בדוק מול המלאי שסופק. ציין מיקום או חלופה קיימת.
-3. דוח לקוח: טבלה טכנית ויזואלית [attachment_0](attachment), יתרונות הנדסיים ועלות חומר גלם סופית.
-4. הוראות עבודה: שלבי חשיפה (Strip), כלי לחיצה (Crimper) והגדרות, וסדר הכנסה לבית הקונקטור.
-5. פתרון תקלות: צ'ק-ליסט QA למקרה שהפין לא ננעל או הלחיצה נכשלה.
+3. דוח לקוח: טבלה טכנית [attachment_0](attachment), יתרונות ועלות חומר גלם סה"כ.
+4. הוראות עבודה: שלבי חשיפה (Strip length), כלי לחיצה והגדרות, וסדר הכנסה.
+5. QA: רשימת בדיקה למניעת תקלות נעילה או לחיצה.
 6. רכש: קישורי חיפוש ל-Mouser/DigiKey במידה ואין במלאי.`;
 
     window.onload = () => {
@@ -106,73 +105,63 @@
 
     function saveData(key, id) {
         localStorage.setItem(key, document.getElementById(id).value);
-        alert("הנתונים נשמרו בזיכרון המקומי.");
+        alert("נשמר!");
     }
 
     function saveAdmin() {
         localStorage.setItem('dazura_prompt', document.getElementById('systemPromptInput').value);
         localStorage.setItem('dazura_api_key', document.getElementById('apiKeyInput').value);
-        alert("הגדרות המערכת עודכנו.");
+        alert("הגדרות Admin עודכנו בהצלחה!");
     }
 
     async function runAnalysis() {
-    const parts = document.getElementById('inputParts').value;
-    const prompt = localStorage.getItem('dazura_prompt') || DEFAULT_PROMPT;
-    const inventory = localStorage.getItem('dazura_inventory') || "";
-    const apiKey = localStorage.getItem('dazura_api_key');
-    
-    const loader = document.getElementById('loader');
-    const output = document.getElementById('output');
-
-    if (!apiKey) {
-        output.innerHTML = "<div class='error-card'>❌ חסר API Key בהגדרות!</div>";
-        return;
-    }
-    if (!parts) return alert("הזן מק\"טים לניתוח");
-
-    loader.style.display = "inline-block";
-    output.innerText = "מתחבר לשרת הנדסי (v1 Stable)...";
-
-    try {
-        // הכתובת המדויקת והיציבה ביותר:
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const parts = document.getElementById('inputParts').value;
+        const prompt = localStorage.getItem('dazura_prompt') || DEFAULT_PROMPT;
+        const inventory = localStorage.getItem('dazura_inventory') || "";
+        const apiKey = localStorage.getItem('dazura_api_key');
         
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ 
-                    parts: [{ 
-                        text: `${prompt}\n\nמלאי:\n${inventory}\n\nמק"טים לניתוח:\n${parts}` 
-                    }] 
-                }]
-            })
-        });
+        const loader = document.getElementById('loader');
+        const output = document.getElementById('output');
 
-        const data = await response.json();
-
-        if (data.candidates && data.candidates[0].content) {
-            // הצלחה! מציגים את התשובה
-            output.innerText = data.candidates[0].content.parts[0].text;
-        } else if (data.error) {
-            // פירוט השגיאה מגוגל
-            output.innerHTML = `<div class='error-card'>❌ שגיאת גוגל: ${data.error.message}</div>`;
-        } else {
-            output.innerHTML = "<div class='error-card'>❌ התקבלה תשובה לא צפויה מהשרת.</div>";
+        if (!apiKey) {
+            output.innerHTML = "<div class='error-card'>❌ חסר API Key! עבור להגדרות והדבק את המפתח.</div>";
+            return;
         }
-    } catch (e) {
-        output.innerHTML = `<div class='error-card'>❌ שגיאת תקשורת: ${e.message}</div>`;
-    } finally {
-        loader.style.display = "none";
-    }
-}
+        if (!parts) return alert("אנא הזן מק\"טים!");
 
-        if (finalResponse) {
-            output.innerText = finalResponse;
-        } else {
-            output.innerHTML = "<div class='error-card'>❌ שגיאה: לא ניתן היה לקבל תשובה מגוגל. בדוק שהמפתח תקין ושאין חסימת אינטרנט.</div>";
+        loader.style.display = "inline-block";
+        output.innerText = "מנתח נתונים הנדסיים מול שרת גוגל (v1)...";
+
+        try {
+            // הכתובת הרשמית והיציבה ביותר
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ 
+                        parts: [{ 
+                            text: `${prompt}\n\nנתוני מלאי:\n${inventory}\n\nמק"טים לניתוח:\n${parts}` 
+                        }] 
+                    }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.candidates && data.candidates[0].content) {
+                output.innerText = data.candidates[0].content.parts[0].text;
+            } else if (data.error) {
+                output.innerHTML = `<div class='error-card'>❌ שגיאת גוגל: ${data.error.message}</div>`;
+            } else {
+                output.innerHTML = "<div class='error-card'>❌ שגיאה: התקבלה תשובה לא תקינה מהשרת.</div>";
+            }
+        } catch (e) {
+            output.innerHTML = `<div class='error-card'>❌ שגיאת תקשורת: ${e.message}</div>`;
+        } finally {
+            loader.style.display = "none";
         }
-        loader.style.display = "none";
     }
 </script>
 </body>
