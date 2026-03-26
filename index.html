@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dazura Expert v15.2</title>
+    <title>Dazura Expert v15.3</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+Hebrew:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -115,7 +115,7 @@
 ```
 <div class="header">
     <span class="header-title">🛠️ Dazura Expert</span>
-    <span class="badge">v15.2 Pro</span>
+    <span class="badge">v15.3 Pro</span>
 </div>
 
 <div class="tabs">
@@ -189,16 +189,16 @@
 
     <label>מודל (בחר תמיד flash)</label>
     <select id="modelSelect">
-        <option value="gemini-1.5-flash-latest" selected>gemini-1.5-flash-latest ✅ חינמי ומומלץ</option>
-        <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b ✅ חינמי, קל יותר</option>
-        <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest ⚠️ דורש חיוב</option>
+        <option value="gemini-2.5-flash-lite" selected>gemini-2.5-flash-lite ✅ חינמי, הכי מהיר</option>
+        <option value="gemini-2.5-flash">gemini-2.5-flash ✅ חינמי, מאוזן</option>
+        <option value="gemini-2.5-pro">gemini-2.5-pro ✅ חינמי, הכי חכם</option>
     </select>
 
     <button class="btn btn-success" onclick="saveSettings()">שמור הגדרות</button>
     <div class="toast toast-success" id="settings-toast">✔ ההגדרות נשמרו</div>
 </div>
 
-<div class="powered">מופעל על ידי <span>Gemini 1.5 Flash</span> · Google AI Studio</div>
+<div class="powered">מופעל על ידי <span>Gemini 2.5</span> · Google AI Studio</div>
 ```
 
 </div>
@@ -209,7 +209,7 @@ let history = JSON.parse(localStorage.getItem('dazura_history') || '[]');
 
 window.onload = () => {
     const key = localStorage.getItem('dazura_gemini_key') || '';
-    const model = localStorage.getItem('dazura_model') || 'gemini-1.5-flash-latest';
+    const model = localStorage.getItem('dazura_model') || 'gemini-2.5-flash-lite';
     document.getElementById('apiKeyInput').value = key;
     document.getElementById('modelSelect').value = model;
     updateKeyStatus(key);
@@ -268,7 +268,7 @@ function buildPrompt(parts) {
 async function runAnalysis() {
     const parts = document.getElementById('inputParts').value.trim();
     const apiKey = localStorage.getItem('dazura_gemini_key');
-    const model  = localStorage.getItem('dazura_model') || 'gemini-1.5-flash-latest';
+    const model  = localStorage.getItem('dazura_model') || 'gemini-2.5-flash-lite';
     const resultArea = document.getElementById('result-area');
     const loader = document.getElementById('loader');
     const btn    = document.getElementById('analyzeBtn');
@@ -307,7 +307,7 @@ async function runAnalysis() {
             const code = data.error.code;
             const msg  = data.error.message || '';
             let hint = '';
-            if (code === 429) hint = '\n\n💡 חרגת ממכסה — המתן כמה שניות ונסה שוב, או עבור ל-gemini-1.5-flash-8b בהגדרות.';
+            if (code === 429) hint = '\n\n💡 חרגת ממכסה — המתן כמה שניות ונסה שוב, או עבור ל-gemini-2.5-flash-lite בהגדרות.';
             else if (code === 404) hint = '\n\n💡 מודל לא נמצא — בחר gemini-1.5-flash-latest בהגדרות.';
             else if (code === 403 || code === 401) hint = '\n\n💡 API Key שגוי — בדוק בהגדרות.';
             showError(resultArea, `Google API Error ${code}`, msg + hint);
